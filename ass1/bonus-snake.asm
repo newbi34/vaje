@@ -24,15 +24,19 @@ LOOP    JSUB    RENDER
 
         JSUB    WAIT
 
+        LDS     #0x100
+        JSUB    RENDER 
+        CLEAR   S
+
         LDA     @SNAKEX         .if (food was eaten)
         COMP    FOODX
         JEQ     L14
-        J       L15
+        J       L20
 
 L14     LDA     @SNAKEY
         COMP     FOODY
         JEQ     L16
-        J       L15
+        J       L20
 
 L16     LDA     #1
         STA     EATEN
@@ -61,9 +65,14 @@ L16     LDA     #1
         JSUB    RAN015
         STA     FOODY
 
-        .propagate position through the snake
-        .for (i = LEN - 2, i >= 0 ) snakex/y[i + 1] = snakex/y[i] 
         LDA     LEN
+        RMO     A, X
+        ADD     #1
+        STA     LEN
+
+        .propagate position through the snake
+        .for (i = LEN - 2, i >= 0 ) snakex/y[i + 1] = snakex/y[i] ???
+L20     LDA     LEN
         SUB     #2
         RMO     A,X 
 
@@ -82,7 +91,7 @@ L18     RMO     X, A
         STS     @ADR            .snakex[i + 1] = snakex[i]
 
         LDA     SNAKEY
-        MULR    T, X
+        .MULR    T, X
         ADDR    X, A
         STA     ADR
         LDS     @ADR            .S = snakey[i]
@@ -97,17 +106,15 @@ L18     RMO     X, A
 
         J       L18
 
-L19     .if (eaten) LEN++, snake[LEN - 1] = temp    
+L19     .if (eaten) ..LEN++, snake[LEN - 1] = temp    
         LDA     EATEN
         COMP    #1
         JEQ     L17
         J       L15 
 
 L17     LDA     LEN
+        SUB     #1
         RMO     A, X
-        ADD     #1
-        STA     LEN
-        
         LDA     SNAKEX
         MULR    T, X
         ADDR    X, A
@@ -116,7 +123,7 @@ L17     LDA     LEN
         STA     @ADR
 
         LDA     SNAKEY
-        MULR    T, X
+        .MULR    T, X
         ADDR    X, A
         STA     ADR
         LDA     TEMPY
@@ -125,9 +132,9 @@ L17     LDA     LEN
 L15     CLEAR   A
         STA     EATEN
 
-        LDS     #0x100
-        JSUB    RENDER 
-        CLEAR   S
+        .LDS     #0x100
+        .JSUB    RENDER 
+        .CLEAR   S
 
         CLEAR   A
         LDCH    @KEY_IN
@@ -193,11 +200,11 @@ HALT    J       HALT
 .no arguments, returns in A 
 RAN015  LDA     SEED
         ADDR    B, A
+        +AND     #0x0FFFFF
         STA     SEED         
 
         MUL     #13
-        ADD     #17          
-        STA     SEED         
+        ADD     #17         
 
         AND     #0x0000FF
         DIV     #16          .between 0 and 15
