@@ -78,6 +78,8 @@ L20     LDA     LEN
 
 L18     RMO     X, A
         COMP    #0
+        .LDA     #0
+        .COMPR   X, A
         JLT     L19
 
         LDA     SNAKEX
@@ -100,6 +102,7 @@ L18     RMO     X, A
         STA     ADR             
         STS     @ADR            .snakey[i + 1] = snakey[i]
 
+        DIVR    T, X
         RMO     X, A            .X--
         SUB     #1
         RMO     A, X
