@@ -20,7 +20,8 @@ FIRST   LDA     #0x44
         JSUB    RAN015
         STA     FOODY
 
-LOOP    JSUB    RENDER
+LOOP    CLEAR   S
+        JSUB    RENDER
 
         JSUB    WAIT
 
@@ -28,7 +29,44 @@ LOOP    JSUB    RENDER
         JSUB    RENDER 
         CLEAR   S
 
-        LDA     @SNAKEX         .if (food was eaten)
+                .check snake
+        .for (i = 1, i < LEN) snakex/y[0] != snakex/y[i]
+        LDX     #1
+L21     RMO     X, A
+        COMP    LEN
+        JEQ     L23
+
+        LDA     SNAKEX
+        MULR    T, X
+        ADDR    X, A
+        DIVR    T, X
+        STA     ADR
+        LDA     @ADR            .A = snakex[i]
+        LDS     @SNAKEX         .S = snakex[0]
+        COMPR   A, S
+        JEQ     L22
+
+        RMO     X, A
+        ADD     #1
+        RMO     A, X
+        J       L21
+
+L22     LDA     SNAKEY
+        MULR    T, X
+        ADDR    X, A
+        DIVR    T, X
+        STA     ADR
+        LDA     @ADR            .A = snakey[i]
+        LDS     @SNAKEY         .S = snakey[0]
+        COMPR   A, S
+        JEQ     HALT
+
+        RMO     X, A
+        ADD     #1
+        RMO     A, X
+        J       L21
+
+L23     LDA     @SNAKEX         .if (food was eaten)
         COMP    FOODX
         JEQ     L14
         J       L20
@@ -78,8 +116,6 @@ L20     LDA     LEN
 
 L18     RMO     X, A
         COMP    #0
-        .LDA     #0
-        .COMPR   X, A
         JLT     L19
 
         LDA     SNAKEX
@@ -93,7 +129,6 @@ L18     RMO     X, A
         STS     @ADR            .snakex[i + 1] = snakex[i]
 
         LDA     SNAKEY
-        .MULR    T, X
         ADDR    X, A
         STA     ADR
         LDS     @ADR            .S = snakey[i]
@@ -126,7 +161,6 @@ L17     LDA     LEN
         STA     @ADR
 
         LDA     SNAKEY
-        .MULR    T, X
         ADDR    X, A
         STA     ADR
         LDA     TEMPY
@@ -134,10 +168,6 @@ L17     LDA     LEN
 
 L15     CLEAR   A
         STA     EATEN
-
-        .LDS     #0x100
-        .JSUB    RENDER 
-        .CLEAR   S
 
         CLEAR   A
         LDCH    @KEY_IN
@@ -191,10 +221,6 @@ L7      .check bounds
         COMP    #15
         JGT     HALT
 
-        .check snake
-        .for (i = 1, i < LEN) snakex/y[0] != snakex/y[i]
-
-
         J       LOOP
 
 HALT    J       HALT  
@@ -203,7 +229,7 @@ HALT    J       HALT
 .no arguments, returns in A 
 RAN015  LDA     SEED
         ADDR    B, A
-        +AND     #0x0FFFFF
+        +AND    #0x0FFFFF
         STA     SEED         
 
         MUL     #13
@@ -286,7 +312,7 @@ L2      RMO     S, A
         ADD     SCREEN
         STA     ADR
         CLEAR   A
-        LDCH    #50
+        LDCH    #200
         STCH     @ADR
 
 L13     JSUB    POP             .epilouge
