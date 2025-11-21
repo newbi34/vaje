@@ -72,9 +72,9 @@ LOOP1   AND     MASK
         SHIFTL  A, 4
         COMP    #10
         JLT     NUMBER
-        ADD     #55
+        ADD     #55     .hex numbers
         J       SKIP1
-NUMBER  ADD     #48
+NUMBER  ADD     #48     .dec numbers
 SKIP1   WD      STDOUT
         SHIFTL  B, 4
         RMO     S, A
@@ -87,7 +87,7 @@ SKIP1   WD      STDOUT
         WD      STDOUT
         RSUB
 
-MASK1   WORD   X'0000FF'
+MASK1   WORD    X'0000FF'
 MASK    WORD    X'F00000'
 STDOUT	BYTE	X'01'
 DEVICE  BYTE    X'FA'

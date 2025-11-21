@@ -7,7 +7,7 @@
 . keyboard settings: 
 . Address: 0x00C000
 .
-. frequency: 4000
+. frequency: 10000
 
 SNAKE   START   0
 
@@ -29,7 +29,7 @@ LOOP    CLEAR   S
         JSUB    RENDER 
         CLEAR   S
 
-                .check snake
+        .check snake
         .for (i = 1, i < LEN) snakex/y[0] != snakex/y[i]
         LDX     #1
 L21     RMO     X, A
@@ -243,9 +243,9 @@ RAN015  LDA     SEED
 .no arguements, no return
 .changes A, X
 WAIT    LDA     #0
-        LDX     #0x99
+        LDX     #0x199
 L8      ADD     #1
-        ADDR    A, B            .increment B which servers at a timer for randomness
+        ADDR    A, B            .increment B which serves at a timer for randomness
         COMPR   A, X
         JEQ     L9
         J       L8
