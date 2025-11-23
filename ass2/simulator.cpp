@@ -10,10 +10,10 @@
 #include <stdlib.h>
 #include <iomanip>
 
-#define MAX_ADDRESS 1000000
+#define MAX_ADDRESS 1024 * 1024 // 1 MB of RAM
 
 static volatile sig_atomic_t stop_requested = 0;
-static int sleep_time_us = 10000; 
+static float sleep_time_us = 1000.0f; 
 
 void singalHandler(int sig)  
 { 
@@ -270,25 +270,25 @@ public:
 
     unsigned char get_byte(unsigned int address)
     {
-        if (address >= memory.size()) { std::cerr << "RAM access out of bounds\n"; return 0; }
+        if (address >= memory.size()) { std::cerr << "RAM access out of bounds at " << address << "\n"; return 0; }
         return this->memory[address];
     }
 
     void set_byte(unsigned int address, unsigned char value)
     {
-        if (address >= memory.size()) { std::cerr << "RAM access out of bounds\n"; return; }
+        if (address >= memory.size()) { std::cerr << "RAM access out of bounds at " << address << "\n"; return; }
         this->memory[address] = value;
     }
 
     unsigned int get_word(int address)
     {
-        if (address + 2 >= memory.size()) { std::cerr << "RAM access out of bounds\n"; return 0; }
+        if (address + 2 >= memory.size()) { std::cerr << "RAM access out of bounds at " << address << "\n"; return 0; }
         return (unsigned int)memory[address + 2] | ((unsigned int)memory[address + 1] << 8) | ((unsigned int)memory[address] << 16);
     }
 
     void set_word(unsigned int address, int value)
     {
-        if (address + 2 >= memory.size()) { std::cerr << "RAM access out of bounds\n"; return; }
+        if (address + 2 >= memory.size()) { std::cerr << "RAM access out of bounds at " << address << "\n"; return; }
         memory[address] = (value >> 16) & 0xFF;
         memory[address + 1] = (value >> 8)  & 0xFF;
         memory[address + 2] = value & 0xFF;
@@ -596,8 +596,25 @@ public:
                         unsigned char byte4 = fetch_byte();
                         if (x) effective_address = byte4 + (byte3 << 8) + ((byte2 & 0x0F) << 16) + get_reg(X);
                         else effective_address = byte4 + (byte3 << 8) + ((byte2 & 0x0F) << 16);
-                        operand = ram.get_word(effective_address);
-
+                        switch (ni)
+                        {
+                            case 3:
+                            {
+                                operand = ram.get_word(effective_address);
+                                break;
+                            }
+                            case 2:
+                            {
+                                effective_address = ram.get_word(effective_address);
+                                operand = ram.get_word(effective_address);
+                                break;
+                            }
+                            case 1:
+                            {
+                                operand = effective_address;
+                                break;
+                            }
+                        }
                         if (bp) handle_exception(NOT_IMPLEMENTED, "Base / PC relative addressing with format 4");
                     }
                     else
@@ -668,37 +685,37 @@ public:
                     }
                     case Opcode::STA:
                     {
-                        ram.set_word(operand, get_reg(A));
+                        ram.set_word(effective_address, get_reg(A));
                         break;
                     }
                     case Opcode::STX:
                     {
-                        ram.set_word(operand, get_reg(X));
+                        ram.set_word(effective_address, get_reg(X));
                         break;
                     }
                     case Opcode::STL:
                     {
-                        ram.set_word(operand, get_reg(L));
+                        ram.set_word(effective_address, get_reg(L));
                         break;
                     }
                     case Opcode::STB:
                     {
-                        ram.set_word(operand, get_reg(B));
+                        ram.set_word(effective_address, get_reg(B));
                         break;
                     }
                     case Opcode::STT:
                     {
-                        ram.set_word(operand, get_reg(T));
+                        ram.set_word(effective_address, get_reg(T));
                         break;
                     }
                     case Opcode::STS:
                     {
-                        ram.set_word(operand, get_reg(S));
+                        ram.set_word(effective_address, get_reg(S));
                         break;
                     }
                     case Opcode::STCH:
                     {
-                        ram.set_byte(operand, static_cast<unsigned char>(get_reg(A) & 0xFF));
+                        ram.set_byte(effective_address, static_cast<unsigned char>(get_reg(A) & 0xFF));
                         break;
                     }
                     case Opcode::OR:
@@ -792,38 +809,38 @@ public:
                     }
                     case Opcode::J:
                     {
-                        if (extended && get_reg(PC) - 4 == operand)
+                        if (extended && get_reg(PC) - 4 == effective_address)
                         {
                             std::cout << "Infinite loop detected at 0x" << std::hex << get_reg(PC) - 4 << ". Stopping execution.\n";
                             stop_requested = 1;
                         }
-                        else if (!extended && get_reg(PC) - 3 == operand)
+                        else if (!extended && get_reg(PC) - 3 == effective_address)
                         {
                             std::cout << "Infinite loop detected at 0x" << std::hex << get_reg(PC) - 3 << ". Stopping execution.\n";
                             stop_requested = 1;
                         }
-                        set_reg(PC, operand);
+                        set_reg(PC, effective_address);
                         break;
                     }
                     case Opcode::JEQ:
                     {
-                        if (get_reg(SW) == 0) set_reg(PC, operand);
+                        if (get_reg(SW) == 0) set_reg(PC, effective_address);
                         break;
                     }
                     case Opcode::JGT:
                     {
-                        if (get_reg(SW) > 0) set_reg(PC, operand);
+                        if (get_reg(SW) > 0) set_reg(PC, effective_address);
                         break;
                     }
                     case Opcode::JLT:
                     {
-                        if (get_reg(SW) < 0) set_reg(PC, operand);
+                        if (get_reg(SW) < 0) set_reg(PC, effective_address);
                         break;
                     }
                     case Opcode::JSUB:
                     {
                         set_reg(L, get_reg(PC));
-                        set_reg(PC, operand);
+                        set_reg(PC, effective_address);
                         break;
                     }
                     case Opcode::RSUB:
@@ -1087,11 +1104,6 @@ public:
     }
 };
 
-void set_sleep_time(int khz)
-{   
-    sleep_time_us = 1000 / khz;
-}
-
 inline std::ostream& operator<<(std::ostream& os, Name n)
 {
     switch (n)
@@ -1152,7 +1164,8 @@ void* set(const char** argv, Machine& machine)
     }
     else if (strcmp(argv[1], "reg") == 0)
     {
-        Name reg_name = static_cast<Name>(argv[2][0]);
+        unsigned int name = std::stoul(argv[2], nullptr, 0);
+        Name reg_name = static_cast<Name>(name);
         int value = std::stoi(argv[3], nullptr, 0);
         machine.set_reg(reg_name, value);
     }
@@ -1165,11 +1178,12 @@ void* get(const char** argv, Machine& machine)
     {
         unsigned int address = std::stoul(argv[2], nullptr, 0);
         int value = machine.get_mem(address, 0);
-        std::cout << "Memory[0x" << std::hex << address << "] = 0x" << std::hex << value << "\n";
+        std::cout << "Memory at 0x" << std::hex << address << " = 0x" << std::hex << value << "\n";
     }
     else if (strcmp(argv[1], "reg") == 0)
     {
-        Name reg_name = static_cast<Name>(argv[2][0]);
+        unsigned int name = std::stoul(argv[2], nullptr, 0);
+        Name reg_name = static_cast<Name>(name);
         int value = machine.get_reg(reg_name);
         std::cout << "Register " << reg_name << " = 0x" << std::hex << value << "\n";
     }
@@ -1201,7 +1215,8 @@ void* dissasemble(const char** argv, Machine& machine)
 void* set_breakpoint(const char** argv, Machine& machine)
 {
     unsigned int address = std::stoul(argv[1], nullptr, 0);
-    stop_requested = 0;
+    add_breakpoint(address);
+    std::cout << "Breakpoint set at address 0x" << std::hex << address << "\n";
     return nullptr;
 }
 
@@ -1211,7 +1226,7 @@ void* load_file(const char** argv, Machine& machine)
     std::ifstream file(argv[1], std::ios::binary);
     if (!file)
     {
-        std::cerr << "Error opening file: " << argv[1] << "\n";
+        std::cerr << "error opening file: " << argv[1] << "\n";
         return nullptr;
     }
 
@@ -1244,6 +1259,33 @@ void* load_file(const char** argv, Machine& machine)
     return nullptr;
 }
 
+void* set_speed(const char** argv, Machine& machine)
+{
+    float khz = std::stof(argv[1], nullptr);
+    sleep_time_us = 10000.0f / khz;
+    std::cout << "execution speed set to " << khz << " kHz\n";
+    return nullptr;
+}
+
+void* get_speed(const char** argv, Machine& machine)
+{
+    float khz = 10000.0f / sleep_time_us;
+    std::cout << "current execution speed: " << khz << " kHz\n";
+    return nullptr;
+}
+
+void* show_bps(const char** argv, Machine& machine)
+{
+    std::cout << "Breakpoints:\n";
+    Breakpoint* current = first;
+    while (current != nullptr)
+    {
+        std::cout << "0x" << std::hex << current->address << "\n";
+        current = current->next;
+    }
+    return nullptr;
+}
+
 const struct action_entry actions[] =
 {
     {"quit", exit, "Exit the simulator."},
@@ -1257,6 +1299,9 @@ const struct action_entry actions[] =
     {"dissasemble", dissasemble, "Dissasemble memory contents. usage: dissasemble <start_address> <end_address>"},
     {"setbp", set_breakpoint, "Set breakpoint at address. usage: setbp <address>"},
     {"load", load_file, "Load object file. usage: load <filename>"},
+    {"setspeed", set_speed, "Set execution speed in kHz. usage: setspeed <kHz>"},
+    {"getspeed", get_speed, "Get current execution speed."},
+    {"showbps", show_bps, "Show all breakpoints."},
     { NULL, NULL, NULL }
 };
 
@@ -1282,7 +1327,7 @@ void repl(Machine& machine)
     }
     while (1) 
     {
-        std::cout << "sim> ";
+        std::cout << "\nsim> ";
         for (int i = 0; i < 16; i++) argv[i][0] = '\0';
         
         fgets(line, sizeof(line), stdin);
