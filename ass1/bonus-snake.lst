@@ -1,0 +1,374 @@
+                  . graphical screen settings:
+                  . Address: 0x00A000
+                  . Columns: 16
+                  . Rows: 16
+                  . Pixel size: 24
+                  
+                  . keyboard settings:
+                  . Address: 0x00C000
+                  
+                  . frequency: 10000
+                  
+00000            SNAKE   START   0    
+                  
+00000  010044    FIRST   LDA     #68    
+00003  5722F2            STCH    DIREC    
+00006  750003            LDT     #3    
+                  
+00009  4B21C8            JSUB    RAN015    . generate new food
+0000C  0F22ED            STA     FOODX    
+0000F  4B21C2            JSUB    RAN015    
+00012  0F22EA            STA     FOODY    
+                  
+00015  B440      LOOP    CLEAR   S    
+00017  4B21EB            JSUB    RENDER    
+                  
+0001A  4B21D2            JSUB    WAIT    
+                  
+0001D  6D0100            LDS     #256    
+00020  4B21E2            JSUB    RENDER    
+00023  B440              CLEAR   S    
+                  
+                  . check snake
+                  . for (i = 1, i < LEN) snakex/y[0] != snakex/y[i]
+00025  050001            LDX     #1    
+00028  AC10      L21     RMO     X,A    
+0002A  2B22B6            COMP    LEN    
+0002D  332042            JEQ     L23    
+                  
+00030  0322BC            LDA     SNAKEX    
+00033  9851              MULR    T,X    
+00035  9010              ADDR    X,A    
+00037  9C51              DIVR    T,X    
+00039  0F22B9            STA     ADR    
+0003C  0222B6            LDA     @ADR    . A = snakex[i]
+0003F  6E22AD            LDS     @SNAKEX    . S = snakex[0]
+00042  A004              COMPR   A,S    
+00044  33200A            JEQ     L22    
+                  
+00047  AC10              RMO     X,A    
+00049  190001            ADD     #1    
+0004C  AC01              RMO     A,X    
+0004E  3F2FD7            J       L21    
+                  
+00051  03229E    L22     LDA     SNAKEY    
+00054  9851              MULR    T,X    
+00056  9010              ADDR    X,A    
+00058  9C51              DIVR    T,X    
+0005A  0F2298            STA     ADR    
+0005D  022295            LDA     @ADR    . A = snakey[i]
+00060  6E228F            LDS     @SNAKEY    . S = snakey[0]
+00063  A004              COMPR   A,S    
+00065  332169            JEQ     HALT    
+                  
+00068  AC10              RMO     X,A    
+0006A  190001            ADD     #1    
+0006D  AC01              RMO     A,X    
+0006F  3F2FB6            J       L21    
+                  
+00072  02227A    L23     LDA     @SNAKEX    . if (food was eaten)
+00075  2B2284            COMP    FOODX    
+00078  332003            JEQ     L14    
+0007B  3F2059            J       L20    
+                  
+0007E  022271    L14     LDA     @SNAKEY    
+00081  2B227B            COMP    FOODY    
+00084  332003            JEQ     L16    
+00087  3F204D            J       L20    
+                  
+0008A  010001    L16     LDA     #1    
+0008D  0F2278            STA     EATEN    
+00090  032250            LDA     LEN    . temp = snake[LEN - 1]
+00093  1D0001            SUB     #1    
+00096  AC01              RMO     A,X    
+00098  032254            LDA     SNAKEX    
+0009B  9851              MULR    T,X    
+0009D  9010              ADDR    X,A    
+0009F  0F2253            STA     ADR    
+000A2  022250            LDA     @ADR    
+000A5  0F225A            STA     TEMPX    
+                  
+000A8  032238            LDA     LEN    
+000AB  1D0001            SUB     #1    
+000AE  AC01              RMO     A,X    
+000B0  03223F            LDA     SNAKEY    
+000B3  9851              MULR    T,X    
+000B5  9010              ADDR    X,A    
+000B7  0F223B            STA     ADR    
+000BA  022238            LDA     @ADR    
+000BD  0F2245            STA     TEMPY    
+                  
+000C0  4B2111            JSUB    RAN015    . generate new food
+000C3  0F2236            STA     FOODX    
+000C6  4B210B            JSUB    RAN015    
+000C9  0F2233            STA     FOODY    
+                  
+000CC  032214            LDA     LEN    
+000CF  AC01              RMO     A,X    
+000D1  190001            ADD     #1    
+000D4  0F220C            STA     LEN    
+                  
+                  . propagate position through the snake
+                  . for (i = LEN - 2, i >= 0 ) snakex/y[i + 1] = snakex/y[i] ???
+000D7  032209    L20     LDA     LEN    
+000DA  1D0002            SUB     #2    
+000DD  AC01              RMO     A,X    
+                  
+000DF  AC10      L18     RMO     X,A    
+000E1  290000            COMP    #0    
+000E4  3B2036            JLT     L19    
+                  
+000E7  032205            LDA     SNAKEX    
+000EA  9851              MULR    T,X    
+000EC  9010              ADDR    X,A    
+000EE  0F2204            STA     ADR    
+000F1  6E2201            LDS     @ADR    . S = snakex[i]
+                  
+000F4  190003            ADD     #3    
+000F7  0F21FB            STA     ADR    
+000FA  7E21F8            STS     @ADR    . snakex[i + 1] = snakex[i]
+                  
+000FD  0321F2            LDA     SNAKEY    
+00100  9010              ADDR    X,A    
+00102  0F21F0            STA     ADR    
+00105  6E21ED            LDS     @ADR    . S = snakey[i]
+                  
+00108  190003            ADD     #3    
+0010B  0F21E7            STA     ADR    
+0010E  7E21E4            STS     @ADR    . snakey[i + 1] = snakey[i]
+                  
+00111  9C51              DIVR    T,X    
+00113  AC10              RMO     X,A    . X--
+00115  1D0001            SUB     #1    
+00118  AC01              RMO     A,X    
+                  
+0011A  3F2FC2            J       L18    
+                  
+0011D  0321E8    L19     LDA     EATEN    
+00120  290001            COMP    #1    
+00123  332003            JEQ     L17    
+00126  3F2026            J       L15    
+                  
+00129  0321B7    L17     LDA     LEN    
+0012C  1D0001            SUB     #1    
+0012F  AC01              RMO     A,X    
+00131  0321BB            LDA     SNAKEX    
+00134  9851              MULR    T,X    
+00136  9010              ADDR    X,A    
+00138  0F21BA            STA     ADR    
+0013B  0321C4            LDA     TEMPX    
+0013E  0E21B4            STA     @ADR    
+                  
+00141  0321AE            LDA     SNAKEY    
+00144  9010              ADDR    X,A    
+00146  0F21AC            STA     ADR    
+00149  0321B9            LDA     TEMPY    
+0014C  0E21A6            STA     @ADR    
+                  
+0014F  B400      L15     CLEAR   A    
+00151  0F21B4            STA     EATEN    
+                  
+00154  B400              CLEAR   A    
+00156  522190            LDCH    @KEY_IN    
+                  
+00159  290041    L10     COMP    #65    . A
+0015C  332018            JEQ     L3    
+0015F  290057            COMP    #87    . W
+00162  332021            JEQ     L4    
+00165  290044            COMP    #68    . D
+00168  33202A            JEQ     L5    
+0016B  290053            COMP    #83    . S
+0016E  332033            JEQ     L6    
+                  
+00171  532184            LDCH    DIREC    
+00174  3F2FE2            J       L10    
+                  
+00177  57217E    L3      STCH    DIREC    
+0017A  022172            LDA     @SNAKEX    . move left
+0017D  1D0001            SUB     #1    
+00180  0E216C            STA     @SNAKEX    
+00183  3F202A            J       L7    
+                  
+00186  57216F    L4      STCH    DIREC    
+00189  022166            LDA     @SNAKEY    . move up
+0018C  1D0001            SUB     #1    
+0018F  0E2160            STA     @SNAKEY    
+00192  3F201B            J       L7    
+                  
+00195  572160    L5      STCH    DIREC    
+00198  022154            LDA     @SNAKEX    . move right
+0019B  190001            ADD     #1    
+0019E  0E214E            STA     @SNAKEX    
+001A1  3F200C            J       L7    
+                  
+001A4  572151    L6      STCH    DIREC    
+001A7  022148            LDA     @SNAKEY    . move down
+001AA  190001            ADD     #1    
+001AD  0E2142            STA     @SNAKEY    
+                  
+001B0  02213C    L7      LDA     @SNAKEX    
+001B3  290000            COMP    #0    
+001B6  3B2018            JLT     HALT    
+001B9  29000F            COMP    #15    
+001BC  372012            JGT     HALT    
+                  
+001BF  022130            LDA     @SNAKEY    
+001C2  290000            COMP    #0    
+001C5  3B2009            JLT     HALT    
+001C8  29000F            COMP    #15    
+001CB  372003            JGT     HALT    
+                  
+001CE  3F2E44            J       LOOP    
+                  
+001D1  3F2FFD    HALT    J       HALT    
+                  
+                  . generate random number from 0 to 15
+                  . no arguments, returns in A
+001D4  032122    RAN015  LDA     SEED    
+001D7  9030              ADDR    B,A    
+001D9  411FFFFF         +AND     #1048575    
+001DD  0F2119            STA     SEED    
+                  
+001E0  21000D            MUL     #13    
+001E3  190011            ADD     #17    
+                  
+001E6  4100FF            AND     #255    
+001E9  250010            DIV     #16    . between 0 and 15
+001EC  4F0000            RSUB        
+                  
+                  . waits some time before reading input so it doesnt feel laggy
+                  . no arguements, no return
+                  . changes A, X
+001EF  010000    WAIT    LDA     #0    
+001F2  050199            LDX     #409    
+001F5  190001    L8      ADD     #1    
+001F8  9003              ADDR    A,B    . increment B which serves at a timer for randomness
+001FA  A001              COMPR   A,X    
+001FC  332003            JEQ     L9    
+001FF  3F2FF3            J       L8    
+00202  4F0000    L9      RSUB        
+                  
+                  . draws the snake
+                  . no arguements, no return
+                  . changes A
+00205  AC20      RENDER  RMO     L,A    
+00207  4B20BB            JSUB    PUSH    . prolouge
+0020A  AC10              RMO     X,A    
+0020C  4B20B6            JSUB    PUSH    
+0020F  AC50              RMO     T,A    
+00211  4B20B1            JSUB    PUSH    
+                  
+00214  AC40              RMO     S,A    
+00216  290000            COMP    #0    
+00219  33201E            JEQ     L12    
+                  
+0021C  0320C4            LDA     LEN    . remove tail
+0021F  1D0001            SUB     #1    . get SNAKEX[LEN - 1]
+00222  AC01              RMO     A,X    
+00224  4B2078            JSUB    OFFSET    
+00227  1B20BC            ADD     SCREEN    
+0022A  0F20C8            STA     ADR    
+0022D  B400              CLEAR   A    
+0022F  5620C3            STCH    @ADR    
+                  
+00232  AC40              RMO     S,A    
+00234  290100            COMP    #256    
+00237  332034            JEQ     L2    . remove only
+                  
+0023A  B410      L12     CLEAR   X    . draw head
+0023C  4B2060            JSUB    OFFSET    
+0023F  1B20A4            ADD     SCREEN    
+00242  0F20B0            STA     ADR    
+00245  B400              CLEAR   A    
+00247  5100F0            LDCH    #240    
+0024A  5620A8            STCH    @ADR    
+                  
+0024D  AC10      L1      RMO     X,A    . draw others
+0024F  190001            ADD     #1    
+00252  AC01              RMO     A,X    
+                  
+00254  2B208C            COMP    LEN    
+00257  332014            JEQ     L2    
+                  
+0025A  4B2042            JSUB    OFFSET    
+0025D  1B2086            ADD     SCREEN    
+00260  0F2092            STA     ADR    
+00263  B400              CLEAR   A    
+00265  5100FF            LDCH    #255    
+00268  56208A            STCH    @ADR    
+                  
+0026B  3F2FDF            J       L1    
+                  
+0026E  AC40      L2      RMO     S,A    
+00270  290000            COMP    #0    
+00273  332017            JEQ     L13    
+                  
+00276  032086            LDA     FOODY    . draw food
+00279  210010            MUL     #16    
+0027C  1B207D            ADD     FOODX    
+0027F  1B2064            ADD     SCREEN    
+00282  0F2070            STA     ADR    
+00285  B400              CLEAR   A    
+00287  5100C8            LDCH    #200    
+0028A  562068            STCH    @ADR    
+                  
+0028D  4B2044    L13     JSUB    POP    . epilouge
+00290  AC05              RMO     A,T    
+00292  4B203F            JSUB    POP    
+00295  AC01              RMO     A,X    
+00297  4B203A            JSUB    POP    
+0029A  AC02              RMO     A,L    
+0029C  4F0000            RSUB        
+                  
+                  . calculates the offset of the snake cell at index X for rendering
+                  . offset = 16 * snakey[index] + snakex[index]
+                  . arguements: X - index
+                  . return: A - offset
+                  . changes A, T
+0029F  AC10      OFFSET  RMO     X,A    
+002A1  210003            MUL     #3    
+002A4  1B204B            ADD     SNAKEY    
+002A7  0F204B            STA     ADR    
+002AA  022048            LDA     @ADR    
+002AD  210010            MUL     #16    
+002B0  AC05              RMO     A,T    
+                  
+002B2  AC10              RMO     X,A    
+002B4  210003            MUL     #3    
+002B7  1B2035            ADD     SNAKEX    
+002BA  0F2038            STA     ADR    
+002BD  022035            LDA     @ADR    
+002C0  9050              ADDR    T,A    
+002C2  4F0000            RSUB        
+                  
+                  . pushes A to stack
+                  . changes A
+002C5  0E2024    PUSH    STA     @ST_PTR    
+002C8  032021            LDA     ST_PTR    
+002CB  190003            ADD     #3    
+002CE  0F201B            STA     ST_PTR    
+002D1  4F0000            RSUB        
+                  
+                  . pops top of stack into A
+002D4  032015    POP     LDA     ST_PTR    
+002D7  1D0003            SUB     #3    
+002DA  0F200F            STA     ST_PTR    
+002DD  02200C            LDA     @ST_PTR    
+002E0  4F0000            RSUB        
+                  
+002E3  000001    LEN     WORD    1    . snake length
+002E6  00A000    SCREEN  WORD    X'00A000'    . screen
+002E9  00C000    KEY_IN  WORD    X'00C000'    . input
+002EC  002000    ST_PTR  WORD    X'002000'    . stack pointer... 20kB space
+002EF  000A00    SNAKEX  WORD    X'000A00'    . pointer to an array of snake x coords, first input is head, SNAKEX + LEN is tail, 3 byte elements, upper left corner is 0, 0
+002F2  000C00    SNAKEY  WORD    X'000C00'    . pointer to an array of snake y coords, offset 0x200 from SNAKEX
+002F5  000000    ADR     WORD    0    . actual address of the x / y coord since sic/xe doesnt support indirect and indexed addressing
+002F8  00        DIREC   BYTE    0    . movement direction, gets added to snake's head
+002F9  00007D    SEED    WORD    125    
+002FC  000011    FOODX   WORD    17    
+002FF  000011    FOODY   WORD    17    
+00302  000000    TEMPX   WORD    0    
+00305  000000    TEMPY   WORD    0    
+00308  000000    EATEN   WORD    0    
+                  
+0030B                    END     FIRST    

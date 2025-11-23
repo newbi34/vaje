@@ -1,0 +1,57 @@
+***** Section <default> *****
+Stats: size=779  blocks=779  symbols=46  literals=0  relocations=0
+Blocks
+    name        start   size  #ins #dir #sto
+    <default>   00000  0030B   266   16    0
+Symbols
+    name        hex       dec  scope     kind      type      description
+    ADR      0002F5       757  local     relative  data      label
+    DIREC    0002F8       760  local     relative  data      label
+    EATEN    000308       776  local     relative  data      label
+    FIRST    000000         0  local     relative  code      label
+    FOODX    0002FC       764  local     relative  data      label
+    FOODY    0002FF       767  local     relative  data      label
+    HALT     0001D1       465  local     relative  code      label
+    KEY_IN   0002E9       745  local     relative  data      label
+    L1       00024D       589  local     relative  code      label
+    L10      000159       345  local     relative  code      label
+    L12      00023A       570  local     relative  code      label
+    L13      00028D       653  local     relative  code      label
+    L14      00007E       126  local     relative  code      label
+    L15      00014F       335  local     relative  code      label
+    L16      00008A       138  local     relative  code      label
+    L17      000129       297  local     relative  code      label
+    L18      0000DF       223  local     relative  code      label
+    L19      00011D       285  local     relative  code      label
+    L2       00026E       622  local     relative  code      label
+    L20      0000D7       215  local     relative  code      label
+    L21      000028        40  local     relative  code      label
+    L22      000051        81  local     relative  code      label
+    L23      000072       114  local     relative  code      label
+    L3       000177       375  local     relative  code      label
+    L4       000186       390  local     relative  code      label
+    L5       000195       405  local     relative  code      label
+    L6       0001A4       420  local     relative  code      label
+    L7       0001B0       432  local     relative  code      label
+    L8       0001F5       501  local     relative  code      label
+    L9       000202       514  local     relative  code      label
+    LEN      0002E3       739  local     relative  data      label
+    LOOP     000015        21  local     relative  code      label
+    OFFSET   00029F       671  local     relative  code      label
+    POP      0002D4       724  local     relative  code      label
+    PUSH     0002C5       709  local     relative  code      label
+    RAN015   0001D4       468  local     relative  code      label
+    RENDER   000205       517  local     relative  code      label
+    SCREEN   0002E6       742  local     relative  data      label
+    SEED     0002F9       761  local     relative  data      label
+    SNAKE    000000         0  exported  relative  code      label
+    SNAKEX   0002EF       751  local     relative  data      label
+    SNAKEY   0002F2       754  local     relative  data      label
+    ST_PTR   0002EC       748  local     relative  data      label
+    TEMPX    000302       770  local     relative  data      label
+    TEMPY    000305       773  local     relative  data      label
+    WAIT     0001EF       495  local     relative  code      label
+Literals
+    label   definition
+Relocations
+    address length flag symbol

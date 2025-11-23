@@ -1,0 +1,36 @@
+0000A            HANOI  START   10    
+                  
+0000A  010005           LDA     #5    
+0000D  4B2003           JSUB    SOLVE    
+                  
+                  
+00010  3F2FFD    HALT   J       HALT    
+                  
+00013  AC03      SOLVE  RMO     A,B    
+00015  AC20             RMO     L,A    
+00017  4B2011           JSUB    PUSH    
+0001A  AC50             RMO     T,A    
+0001C  4B200C           JSUB    PUSH    
+0001F  AC30             RMO     B,A    
+                  
+00021  4B2016           JSUB    POP    
+00024  AC05             RMO     A,T    
+00026  4B2011           JSUB    POP    
+00029  AC02             RMO     A,L    
+                  
+                  
+0002B  0E201B    PUSH   STA     @S_PTR    
+0002E  032018           LDA     S_PTR    
+00031  190003           ADD     #3    
+00034  0F2012           STA     S_PTR    
+00037  4F0000           RSUB        
+                  
+0003A  03200C    POP    LDA     S_PTR    
+0003D  1D0003           SUB     #3    
+00040  0F2006           STA     S_PTR    
+00043  022003           LDA     @S_PTR    
+00046  4F0000           RSUB        
+                  
+00049  001000    S_PTR  WORD    X'001000'    
+                  
+0004C                   END     HANOI    

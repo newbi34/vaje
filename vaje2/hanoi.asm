@@ -1,4 +1,4 @@
-HANOI   START   0
+HANOI   START   10
 
         LDA     #5
         JSUB    SOLVE
@@ -33,4 +33,4 @@ POP     LDA     S_PTR
 
 S_PTR   WORD    X'001000'
 
-END     HANOI
+        END     HANOI
