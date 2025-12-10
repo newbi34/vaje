@@ -52,12 +52,39 @@ void add_breakpoint(unsigned int address)
 
 bool on_breakpoint(unsigned int address)
 {
-    while (first != nullptr && first->next != nullptr)
+    Breakpoint* current = first;
+    while (current != nullptr)
     {
-        if (first->next->address == address) return true;
-        first = first->next;
+        if (current->address == address) return true;
+        
+        current = current->next;
     }
     return false;
+}
+
+void disable_bp(unsigned int address)
+{
+    Breakpoint* current = first;
+    Breakpoint* previous = nullptr;
+
+    while (current != nullptr)
+    {
+        if (current->address == address)
+        {
+            if (previous == nullptr)
+            {
+                first = current->next;
+            }
+            else
+            {
+                previous->next = current->next;
+            }
+            delete current;
+            return;
+        }
+        previous = current;
+        current = current->next;
+    }
 }
 
 class Opcode
@@ -460,7 +487,7 @@ public:
         return byte;
     }
 
-    unsigned int inline handle_bp(int bp, unsigned char byte2, unsigned char byte3)
+    int inline handle_bp(int bp, unsigned char byte2, unsigned char byte3)
     {
         switch (bp)
         {
@@ -470,7 +497,13 @@ public:
             }
             case 0b00100000:
             {
-                return byte3 + ((byte2 & 0x0F) << 8) + get_reg(PC);
+                // get byte3 + byte2 & 0x0F, check if negative (bit 11 set), sign extend to 32 bits, add to PC
+                int byte2_signed = byte2 & 0x0F;
+                if (byte2_signed & 0x08) // negative
+                {
+                    byte2_signed |= 0xFFFFFFF0; // sign extend
+                }
+                return (byte3 + (byte2_signed << 8)) + get_reg(PC);
             }
             case 0b01000000:
             {
@@ -487,10 +520,17 @@ public:
 
     void execute()
     {
+        if (get_reg(PC) > 0x500)
+        {
+            std::cout << "PC out of bounds: 0x" << std::hex << get_reg(PC) << "\n";
+            return;
+        }
+
         if (on_breakpoint(get_reg(PC))) 
         {
             std::cout << "Breakpoint hit at address 0x" << std::hex << get_reg(PC) << "\n";
             stop_requested = 1;
+            disable_bp(get_reg(PC));
             return;
         } 
 
@@ -819,32 +859,38 @@ public:
                             std::cout << "Infinite loop detected at 0x" << std::hex << get_reg(PC) - 3 << ". Stopping execution.\n";
                             stop_requested = 1;
                         }
+                        std::cout << "jumping to 0x" << std::hex << effective_address << "\n";
                         set_reg(PC, effective_address);
                         break;
                     }
                     case Opcode::JEQ:
                     {
+                        std::cout << "jumping to 0x" << std::hex << effective_address << " if SW == 0 (SW=" << get_reg(SW) << ")\n";
                         if (get_reg(SW) == 0) set_reg(PC, effective_address);
                         break;
                     }
                     case Opcode::JGT:
                     {
+                        std::cout << "jumping to 0x" << std::hex << effective_address << " if SW > 0 (SW=" << get_reg(SW) << ")\n";
                         if (get_reg(SW) > 0) set_reg(PC, effective_address);
                         break;
                     }
                     case Opcode::JLT:
                     {
+                        std::cout << "jumping to 0x" << std::hex << effective_address << " if SW < 0 (SW=" << get_reg(SW) << ")\n";
                         if (get_reg(SW) < 0) set_reg(PC, effective_address);
                         break;
                     }
                     case Opcode::JSUB:
                     {
+                        std::cout << "jumping to subroutine at 0x" << std::hex << effective_address << "\n";
                         set_reg(L, get_reg(PC));
                         set_reg(PC, effective_address);
                         break;
                     }
                     case Opcode::RSUB:
                     {
+                        std::cout << "returning from subroutine to 0x" << std::hex << get_reg(L) << "\n";
                         set_reg(PC, get_reg(L));
                         break;
                     }
@@ -1363,11 +1409,6 @@ int main(int argc, const char* argv[])
     Machine machine;
 
     repl(machine);
-
-    //machine.set_mem(0x0, 0x028102); // LDA #0x102
-    //machine.set_mem(0x3, 0x3C0006); // JSUB 0x6
-
-    //machine.dissasemble(0, 15);
 
 
     return 0;

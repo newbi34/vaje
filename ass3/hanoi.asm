@@ -1,8 +1,9 @@
-HANOI   START   10
+HANOI   START   10 
 
         LDA     #5 
         JSUB    SOLVE
-
+        LDB     #Y
+        BASE    Y
 
 HALT    J        HALT
 
@@ -17,8 +18,12 @@ SOLVE   RMO     A, B
         RMO     A, T
         JSUB    POP
         RMO     A, L
-        
+        RSUB
 
+Y       WORD    1
+Z       BYTE    X'31'
+
+        ORG     2000
 PUSH    STA     @S_PTR
         LDA     S_PTR
         ADD     #3
@@ -32,5 +37,6 @@ POP     LDA     S_PTR
         RSUB
 
 S_PTR   WORD    X'001000'
+BLA     BYTE    C'HAHA'
 
         END     HANOI
